@@ -1,69 +1,56 @@
-# CodeIgniter 4 Application Starter
+# PERANCANGAN SISTEM INFORMASI GEOGRAFIS BERBASIS WEBSITE UNTUK INFORMASI DAN REKOMENDASI MITIGASI BANJIR DI KOTA SERANG
 
-## What is CodeIgniter?
+Project ini merupakan sistem informasi geografis (SIG) yang memanfaatkan data curah hujan dari **BMKG Kota Serang** untuk memberikan informasi titik rawan serta rekomendasi mitigasi bencana banjir bagi masyarakat dan pihak **BPBD**.
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+---
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+## 🚀 Teknologi yang Digunakan
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+Sistem ini dibangun dengan stack teknologi modern untuk memastikan performa dan akurasi data:
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+* **Framework:** CodeIgniter 4 (PHP 8.x)
+* **Database:** MySQL (Relational Database)
+* **Mapping Engine:** Leaflet.js / OpenStreetMap (untuk visualisasi spasial)
+* **Data Format:** GeoJSON (untuk boundary wilayah Kecamatan di Kota Serang)
+* **Email Gateway:** Brevo API (untuk verifikasi akun dan notifikasi)
+* **Styling:** Bootstrap 5 / AdminLTE
 
-## Installation & updates
+---
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+## 🛠️ Fitur Utama Website
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+1.  **Dashboard Monitoring:** Visualisasi data curah hujan terkini dari stasiun meteorologi.
+2.  **Peta Sebaran Banjir:** Peta interaktif Kota Serang yang menampilkan zonasi rawan banjir berdasarkan data historis dan curah hujan.
+3.  **Sistem Rekomendasi Mitigasi:** Memberikan arahan tindakan yang harus dilakukan masyarakat berdasarkan level kerawanan.
+4.  **Verifikasi Akun Otomatis:** Sistem registrasi user yang terintegrasi dengan verifikasi email via Brevo.
+5.  **Manajemen Data (Admin):** CRUD data curah hujan, data kecamatan, dan plotting titik koordinat baru.
 
-## Setup
+---
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+## 📦 Cara Instalasi (Untuk Collaborator)
 
-## Important Change with index.php
+Bagi tim pengembang (Firman dan Atyaa), silakan ikuti langkah berikut:
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+1. **Clone Repository**
+   ```bash
+   git clone [https://github.com/FirmanNurilhaq/BMKGxBPBD.git](https://github.com/FirmanNurilhaq/BMKGxBPBD.git)
+   composer install
+2. **Konfigurasi Environment**
+   ```bash
+    Copy file env menjadi .env.
+   Atur database.default.hostname, database.default.database, dll.
+   Masukkan Brevo API Key ke dalam .env (Dapatkan dari Atyaa). 
+3. **Migrasi Database**
+   ```bash
+   php spark migrate:refresh
+   Import file .sql (tersedia di folder database/) ke phpMyAdmin anda.
+4. **Run Server**
+   ```bash
+   php spark serve
+5. **Akses Website**
+   ```bash
+   http://localhost:8081 atau http://localhost/8080
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
 
-**Please** read the user guide for a better explanation of how CI4 works!
-
-## Repository Management
-
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
-
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
-
-## Server Requirements
-
-PHP version 8.2 or higher is required, with the following extensions installed:
-
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
-
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - The end of life date for PHP 8.1 was December 31, 2025.
-> - If you are still using below PHP 8.2, you should upgrade immediately.
-> - The end of life date for PHP 8.2 will be December 31, 2026.
-
-Additionally, make sure that the following extensions are enabled in your PHP:
-
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+---
+@COPYRIGHT 2026 FIRMAN NURIHALAQ & DYPA PRAMATYA SAHARA
