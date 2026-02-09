@@ -21,6 +21,8 @@
                 </a>
                 <div class="flex items-center space-x-6">
                     <a href="/admin" class="hover:text-blue-400 transition">Dashboard</a>
+                    <a href="/admin/arsip" class="hover:text-blue-400 transition">Arsip Data</a>
+                    <a href="/admin/komentar" class="hover:text-blue-400 transition">Komentar</a>
                     <a href="/" class="hover:text-blue-400 transition">Lihat Peta</a>
                     <a href="/logout" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">Logout</a>
                 </div>

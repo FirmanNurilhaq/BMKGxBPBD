@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use App\Models\UserModel;
+use App\Libraries\BrevoService;
 
 class AuthController extends BaseController
 {
@@ -33,6 +34,11 @@ class AuthController extends BaseController
         $user = $userModel->where('username', $username)->first();
 
         if ($user && password_verify($password, $user['password'])) {
+            // Check email verification for non-admin users
+            if ($user['role'] !== 'admin' && !$user['email_verified']) {
+                return redirect()->back()->with('error', 'Email belum diverifikasi. Silakan cek inbox email Anda.');
+            }
+
             session()->set([
                 'user_id' => $user['id'],
                 'username' => $user['username'],
@@ -93,17 +99,118 @@ class AuthController extends BaseController
             return redirect()->back()->withInput()->with('errors', $validation->getErrors());
         }
 
+        // Generate verification token
+        $token = bin2hex(random_bytes(32));
+        $tokenExpires = date('Y-m-d H:i:s', strtotime('+24 hours'));
+
         $userModel = new UserModel();
+        $email = $this->request->getPost('email');
+        $nama = $this->request->getPost('nama');
+
         $userModel->insert([
-            'nama' => $this->request->getPost('nama'),
-            'email' => $this->request->getPost('email'),
+            'nama' => $nama,
+            'email' => $email,
             'username' => $this->request->getPost('username'),
             'password' => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
             'role' => 'masyarakat',
+            'email_verified' => 0,
+            'verification_token' => $token,
+            'token_expires_at' => $tokenExpires,
             'created_at' => date('Y-m-d H:i:s'),
         ]);
 
-        return redirect()->to('/login')->with('success', 'Registrasi berhasil! Silakan login.');
+        // Send verification email
+        $brevo = new BrevoService();
+        $emailSent = $brevo->sendVerificationEmail($email, $nama, $token);
+
+        if (!$emailSent) {
+            // Log error but don't fail registration
+            log_message('error', 'Failed to send verification email to: ' . $email);
+        }
+
+        // Store email in session for resend functionality
+        session()->setFlashdata('pending_email', $email);
+
+        return redirect()->to('/verify-pending');
+    }
+
+    public function verifyPending()
+    {
+        return view('auth/verify_pending');
+    }
+
+    public function verifyEmail($token)
+    {
+        $userModel = new UserModel();
+        $user = $userModel->where('verification_token', $token)->first();
+
+        if (!$user) {
+            return view('auth/verify_result', [
+                'success' => false,
+                'message' => 'Token verifikasi tidak valid.'
+            ]);
+        }
+
+        // Check if token expired
+        if (strtotime($user['token_expires_at']) < time()) {
+            return view('auth/verify_result', [
+                'success' => false,
+                'message' => 'Token verifikasi sudah kadaluarsa. Silakan minta kirim ulang.'
+            ]);
+        }
+
+        // Verify the email
+        $userModel->update($user['id'], [
+            'email_verified' => 1,
+            'verification_token' => null,
+            'token_expires_at' => null,
+        ]);
+
+        return view('auth/verify_result', [
+            'success' => true,
+            'message' => 'Email berhasil diverifikasi! Silakan login.'
+        ]);
+    }
+
+    public function resendVerification()
+    {
+        $email = $this->request->getGet('email') ?? session()->getFlashdata('pending_email');
+
+        if (!$email) {
+            return redirect()->to('/login')->with('error', 'Email tidak ditemukan.');
+        }
+
+        $userModel = new UserModel();
+        $user = $userModel->where('email', $email)->first();
+
+        if (!$user) {
+            return redirect()->to('/login')->with('error', 'Email tidak terdaftar.');
+        }
+
+        if ($user['email_verified']) {
+            return redirect()->to('/login')->with('success', 'Email sudah terverifikasi. Silakan login.');
+        }
+
+        // Generate new token
+        $token = bin2hex(random_bytes(32));
+        $tokenExpires = date('Y-m-d H:i:s', strtotime('+24 hours'));
+
+        $userModel->update($user['id'], [
+            'verification_token' => $token,
+            'token_expires_at' => $tokenExpires,
+        ]);
+
+        // Send verification email
+        $brevo = new BrevoService();
+        $emailSent = $brevo->sendVerificationEmail($email, $user['nama'], $token);
+
+        session()->setFlashdata('pending_email', $email);
+
+        if ($emailSent) {
+            return redirect()->to('/verify-pending')->with('success', 'Email verifikasi telah dikirim ulang.');
+        }
+
+        return redirect()->to('/verify-pending')->with('error', 'Gagal mengirim email. Silakan coba lagi.');
     }
 
     public function logout()
@@ -112,4 +219,5 @@ class AuthController extends BaseController
         return redirect()->to('/login');
     }
 }
+
 

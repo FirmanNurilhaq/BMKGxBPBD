@@ -11,7 +11,8 @@ class MapController extends BaseController
     public function index()
     {
         $curahHujanModel = new CurahHujanModel();
-        $rainfallData = $curahHujanModel->getLatestByKecamatan();
+        $rainfallData = $curahHujanModel->getTodayByKecamatan();
+        $hasData = !empty($rainfallData);
 
         $mapData = [];
         foreach ($rainfallData as $row) {
@@ -44,13 +45,15 @@ class MapController extends BaseController
         return view('map/index', [
             'title' => 'Peta Risiko Banjir - Kota Serang',
             'mapData' => $mapData,
+            'hasData' => $hasData,
         ]);
     }
 
     public function apiMapData()
     {
         $curahHujanModel = new CurahHujanModel();
-        $rainfallData = $curahHujanModel->getLatestByKecamatan();
+        $rainfallData = $curahHujanModel->getTodayByKecamatan();
+        $hasData = !empty($rainfallData);
 
         $result = [];
         foreach ($rainfallData as $row) {
@@ -80,6 +83,98 @@ class MapController extends BaseController
             ];
         }
 
-        return $this->response->setJSON(['success' => true, 'data' => $result]);
+        return $this->response->setJSON([
+            'success' => true, 
+            'data' => $result,
+            'hasData' => $hasData,
+            'lastUpdate' => date('H:i:s'),
+        ]);
+    }
+
+    /**
+     * Get today's comments
+     */
+    public function getComments()
+    {
+        $commentModel = new \App\Models\CommentModel();
+        $comments = $commentModel->getTodayComments();
+
+        $formattedComments = [];
+        foreach ($comments as $comment) {
+            $formattedComments[] = [
+                'id' => $comment['id'],
+                'nama' => $comment['nama'],
+                'content' => $comment['content'],
+                'time' => date('H:i', strtotime($comment['created_at'])),
+            ];
+        }
+
+        return $this->response->setJSON([
+            'success' => true,
+            'comments' => $formattedComments,
+            'date' => date('d M Y'),
+        ]);
+    }
+
+    /**
+     * Post a new comment (requires login)
+     */
+    public function postComment()
+    {
+        // Check if logged in
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Silakan login terlebih dahulu untuk berkomentar.',
+                'requireLogin' => true,
+            ])->setStatusCode(401);
+        }
+
+        $content = trim($this->request->getPost('content'));
+
+        // Validate content
+        if (empty($content)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Komentar tidak boleh kosong.',
+            ])->setStatusCode(400);
+        }
+
+        if (strlen($content) > 500) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Komentar maksimal 500 karakter.',
+            ])->setStatusCode(400);
+        }
+
+        // Hardcoded word filter
+        $blockedWords = [
+            'bodoh', 'goblok', 'tolol', 'bangsat', 'anjing', 'babi', 
+            'setan', 'kampret', 'bajingan', 'brengsek', 'sialan',
+            'kontol', 'memek', 'ngentot', 'jancok', 'asu',
+        ];
+
+        $lowerContent = strtolower($content);
+        foreach ($blockedWords as $word) {
+            if (strpos($lowerContent, $word) !== false) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Komentar mengandung kata yang tidak pantas.',
+                ])->setStatusCode(400);
+            }
+        }
+
+        // Save comment
+        $commentModel = new \App\Models\CommentModel();
+        $commentModel->insert([
+            'user_id' => session()->get('user_id'),
+            'content' => $content,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => 'Komentar berhasil ditambahkan.',
+        ]);
     }
 }

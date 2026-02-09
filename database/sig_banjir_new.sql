@@ -9,6 +9,9 @@ CREATE TABLE users (
     nama VARCHAR(100) NOT NULL,
     password VARCHAR(255) NOT NULL,
     role ENUM('admin', 'masyarakat') DEFAULT 'masyarakat',
+    email_verified TINYINT(1) DEFAULT 0,
+    verification_token VARCHAR(64) NULL,
+    token_expires_at DATETIME NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY username (username),
@@ -30,8 +33,17 @@ CREATE TABLE curah_hujan (
     FOREIGN KEY (kecamatan_id) REFERENCES kecamatan(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO users (username, email, nama, password, role) VALUES 
-('admin_bmkg', 'admin@bmkg.go.id', 'Admin BMKG', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+CREATE TABLE comments (
+    id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id INT(11) UNSIGNED NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO users (username, email, nama, password, role, email_verified) VALUES 
+('admin_bmkg', 'admin@bmkg.go.id', 'Admin BMKG', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 1);
 
 INSERT INTO kecamatan (nama_kecamatan) VALUES 
 ('Kasemen'),
